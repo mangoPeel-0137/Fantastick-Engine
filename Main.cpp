@@ -1,4 +1,7 @@
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -146,6 +149,18 @@ int main() {
 	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(100, 0, 0));
 	
 	Renderer renderer;
+
+	ImGui::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
+	ImGui::StyleColorsDark();
+	ImGuiIO& io = ImGui::GetIO();
+
+	// State variables for our widgets
+	bool show_demo_window = true;
+	float clear_color = 0.45f;
+
+
 	float LastFrame = float(glfwGetTime());
 	float CurrentFrame = 0.0f;
 	float dt = 0.0f;
@@ -156,6 +171,13 @@ int main() {
 		if (dt > 1.0f / 60.0f)
 		{
 			renderer.Clear();
+
+			ImGui_ImplOpenGL3_NewFrame(); // important ig
+			ImGui_ImplGlfw_NewFrame(); // the one from tutorial
+			ImGui::NewFrame(); // also important ig
+
+
+
 			shader.Activate();
 			
 			shader.SetUniform1i("u_Texture", 0);
@@ -169,6 +191,31 @@ int main() {
 			// Draw stuff
 			renderer.Draw(vao, ibo, shader);
 
+			// Build UI using ImGui functions
+			{
+				static float f = 0.0f;
+				static int counter = 0;
+
+				ImGui::Begin("Hello, World!"); // Create a window named "Hello, World!"
+
+				ImGui::Text("This is some useful text.");               // Display some text
+				ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window state
+
+				ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+				ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+				if (ImGui::Button("Button"))                            // Buttons return true when clicked
+					counter++;
+				ImGui::SameLine();
+				ImGui::Text("counter = %d", counter);
+
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+				ImGui::End();
+			}
+
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 			camera2d.Update();
 			shader.Disable();
 			LastFrame = CurrentFrame;
@@ -179,6 +226,9 @@ int main() {
 
 	//Clean up
 	shader.Destroy();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
